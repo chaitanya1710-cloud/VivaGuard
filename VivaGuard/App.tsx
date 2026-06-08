@@ -9,6 +9,8 @@ import PermissionsScreen from './src/screens/PermissionsScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import ContactsScreen from './src/screens/ContactsScreen';
 import SafeZonesScreen from './src/screens/SafeZonesScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
+import AlertScreen from './src/screens/AlertScreen';
 
 const Stack = createStackNavigator();
 
@@ -16,7 +18,7 @@ function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator 
-        initialRouteName="SafeZones"
+        initialRouteName="Alert"
         screenOptions={{ headerShown: false }}
       >
         <Stack.Screen name="Splash" component={SplashScreen} />
@@ -25,6 +27,8 @@ function App() {
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Contacts" component={ContactsScreen} />
         <Stack.Screen name="SafeZones" component={SafeZonesScreen} />
+        <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen name="Alert" component={AlertScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
