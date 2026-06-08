@@ -9,14 +9,57 @@ import {
   Animated,
   Dimensions,
   Alert,
+  PermissionsAndroid,
+  Platform,
 } from 'react-native';
+import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
+import Geolocation from 'react-native-geolocation-service';
 
 const { width } = Dimensions.get('window');
 
 const HomeScreen = () => {
   const [sosActive, setSosActive] = useState(false);
+  const [location, setLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+  const [address, setAddress] = useState('Locating...');
   const audioLevel = useRef(new Animated.Value(0.4)).current;
   const sosProgress = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    requestLocationPermission();
+  }, []);
+
+  const requestLocationPermission = async () => {
+    if (Platform.OS === 'android') {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+      );
+      if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+        getCurrentLocation();
+      } else {
+        Alert.alert('Permission Denied', 'Location permission is required for map monitoring.');
+      }
+    } else {
+      getCurrentLocation();
+    }
+  };
+
+  const getCurrentLocation = () => {
+    Geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setLocation({ latitude, longitude });
+        setAddress('1240 Terrace Street, SF'); // Mock address as per requirements
+      },
+      (error) => {
+        console.log(error.code, error.message);
+        Alert.alert('Error', 'Failed to get current location.');
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+    );
+  };
 
   // Animate audio level bar for visual effect
   useEffect(() => {
@@ -130,15 +173,36 @@ const HomeScreen = () => {
 
         {/* Map Preview */}
         <View style={styles.mapContainer}>
-          <View style={styles.mapPlaceholder}>
-             {/* Mocking a map with lines */}
-             <View style={styles.mapLine} />
-             <View style={[styles.mapLine, { transform: [{ rotate: '90deg' }] }]} />
-             <Text style={styles.mapPin}>📍</Text>
-          </View>
+          {location ? (
+            <MapView
+              provider={PROVIDER_DEFAULT}
+              style={styles.map}
+              initialRegion={{
+                latitude: location.latitude,
+                longitude: location.longitude,
+                latitudeDelta: 0.01,
+                longitudeDelta: 0.01,
+              }}
+            >
+              <Marker
+                coordinate={{
+                  latitude: location.latitude,
+                  longitude: location.longitude,
+                }}
+              >
+                <View style={styles.markerContainer}>
+                  <View style={styles.markerDot} />
+                </View>
+              </Marker>
+            </MapView>
+          ) : (
+            <View style={styles.mapPlaceholder}>
+              <Text style={styles.loadingText}>Loading Map...</Text>
+            </View>
+          )}
           <View style={styles.addressBadge}>
             <View style={styles.blueDot} />
-            <Text style={styles.addressText}>1240 Terrace Street, SF</Text>
+            <Text style={styles.addressText}>{address}</Text>
           </View>
         </View>
 
@@ -350,25 +414,39 @@ const styles = StyleSheet.create({
   },
   mapContainer: {
     height: 200,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#E2E8F0',
     borderRadius: 16,
     overflow: 'hidden',
-    marginBottom: 16,
+    marginBottom: 24,
+    position: 'relative',
   },
-  mapPlaceholder: {
-    flex: 1,
-    backgroundColor: '#1E293B', // Dark background for map
+  map: {
+    ...StyleSheet.absoluteFill,
+  },
+  markerContainer: {
+    width: 20,
+    height: 20,
+    backgroundColor: 'rgba(59, 130, 246, 0.3)',
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  mapLine: {
-    position: 'absolute',
-    width: '100%',
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+  markerDot: {
+    width: 10,
+    height: 10,
+    backgroundColor: '#3B82F6',
+    borderRadius: 5,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
   },
-  mapPin: {
-    fontSize: 40,
+  mapPlaceholder: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: '#64748B',
+    fontSize: 14,
   },
   addressBadge: {
     position: 'absolute',
